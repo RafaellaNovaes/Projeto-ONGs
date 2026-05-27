@@ -6,19 +6,24 @@ import com.google.firebase.FirebaseOptions;
 import org.springframework.context.annotation.Configuration;
 
 import javax.annotation.PostConstruct;
-import java.io.FileInputStream;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 
 @Configuration
 public class FirebaseConfig {
 
     @PostConstruct
     public void initialize() throws IOException {
-        FileInputStream serviceAccount =
-                new FileInputStream(System.getenv("FIREBASE_CREDENTIALS"));
+        String credJson = System.getenv("FIREBASE_CREDENTIALS");
+
+        InputStream credStream = new ByteArrayInputStream(
+                credJson.getBytes(StandardCharsets.UTF_8)
+        );
 
         FirebaseOptions options = FirebaseOptions.builder()
-                .setCredentials(GoogleCredentials.fromStream(serviceAccount))
+                .setCredentials(GoogleCredentials.fromStream(credStream))
                 .build();
 
         if (FirebaseApp.getApps().isEmpty()) {
