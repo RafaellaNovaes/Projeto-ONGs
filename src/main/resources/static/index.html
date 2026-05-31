@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Mais Amor Por Favor | Login</title>
+    <link rel="stylesheet" type="text/css" href="css/estilos.css">
+</head>
+<body class="login-page">
+
+<div class="container">
+    <div class="card login-card">
+        <h1>Mais Amor Por Favor</h1>
+
+        <div class="toggle-wrapper">
+            <span class="label-text">Doador</span>
+            <label class="switch">
+                <input type="checkbox" id="profile-toggle">
+                <span class="slider round"></span>
+            </label>
+            <span class="label-text">Organizador</span>
+        </div>
+
+        <div id="alert-msg" style="color: #d9534f; margin-bottom: 15px; font-weight: bold; text-align: center; display: none;"></div>
+
+        <form id="form-login" onsubmit="fazerLogin(event)">
+            <div class="input-group">
+                <label>E-mail</label>
+                <input type="email" id="login-email" required placeholder="exemplo@email.com">
+            </div>
+
+            <div class="input-group">
+                <label>Senha</label>
+                <input type="password" id="login-senha" required placeholder="******">
+            </div>
+
+            <button type="submit" id="btn-login" class="btn-submit">Entrar como Doador</button>
+
+            <p id="registro-texto" style="margin-top: 20px;">
+                Ainda não tem conta?
+                <a href="cadastro_pessoa.html?perfil=doador" id="link-cadastro" style="color: #E1AD01; font-weight: bold; text-decoration: none;">
+                    Registre-se como Doador
+                </a>
+            </p>
+        </form>
+    </div>
+</div>
+
+<script type="module">
+    import { auth, pessoaAPI } from './js/api.js';
+
+    const toggle = document.getElementById('profile-toggle');
+    const btnLogin = document.getElementById('btn-login');
+    const linkCadastro = document.getElementById('link-cadastro');
+
+    function atualizarInterface() {
+        if (toggle.checked) {
+            btnLogin.textContent = "Entrar como Organizador";
+            linkCadastro.textContent = "Registre-se como Organizador";
+            linkCadastro.href = "cadastro_pessoa.html?perfil=organizador";
+        } else {
+            btnLogin.textContent = "Entrar como Doador";
+            linkCadastro.textContent = "Registre-se como Doador";
+            linkCadastro.href = "cadastro_pessoa.html?perfil=doador";
+        }
+    }
+
+    toggle.addEventListener('change', atualizarInterface);
+
+    window.fazerLogin = async function(event) {
+        event.preventDefault();
+        const alertEl = document.getElementById('alert-msg');
+        alertEl.style.display = 'none';
+
+        const email = document.getElementById('login-email').value.trim();
+        const senha = document.getElementById('login-senha').value;
+
+        try {
+            const data = await pessoaAPI.login(email, senha);
+            auth.setToken(data.token);
+            // Salva os dados completos vindos do seu payload JWT/Backend
+            auth.setUser({
+                id: data.id,
+                nome: data.nome,
+                email: email,
+                perfil: data.perfil // 'DOADOR' ou 'ORGANIZADOR'
+            });
+
+            if (data.perfil === 'ORGANIZADOR') {
+                window.location.href = 'home_organizador.html';
+            } else {
+                window.location.href = 'home_doador.html';
+            }
+        } catch (e) {
+            alertEl.textContent = e.message || 'Credenciais inválidas.';
+            alertEl.style.display = 'block';
+        }
+    }
+</script>
+</body>
+</html>

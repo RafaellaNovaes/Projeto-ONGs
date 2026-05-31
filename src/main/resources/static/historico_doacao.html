@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Minhas Doações | Mais Amor Por Favor</title>
+    <link rel="stylesheet" type="text/css" href="css/estilos.css">
+</head>
+<body>
+
+<header>
+    <h1>Mais Amor Por Favor</h1>
+    <p>Histórico de Contribuições do Bem</p>
+</header>
+
+<div class="container">
+    <div class="card">
+        <h2>Minhas Doações Realizadas</h2>
+
+        <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+            <thead>
+            <tr style="background-color: #1A2A40; color: #F5F5DC;">
+                <th style="padding: 12px; text-align: left;">Data</th>
+                <th style="padding: 12px; text-align: left;">Tipo</th>
+                <th style="padding: 12px; text-align: left;">Detalhes / Descrição</th>
+                <th style="padding: 12px; text-align: right;">Valor</th>
+            </tr>
+            </thead>
+            <tbody id="tabela-doacoes">
+            <tr>
+                <td colspan="4" style="text-align: center; padding: 20px;">Carregando histórico...</td>
+            </tr>
+            </tbody>
+        </table>
+
+        <div style="margin-top: 30px;">
+            <a href="home_doador.html" style="color: #1A2A40; text-decoration: none; font-weight: bold;">⇠ Voltar ao Início</a>
+        </div>
+    </div>
+</div>
+
+<script type="module">
+    import { auth, doacaoAPI } from './js/api.js';
+    if (!auth.isLogged()) window.location.href = 'index.html';
+
+    async function carregarHistorico() {
+        const tabela = document.getElementById('tabela-doacoes');
+        try {
+            // Busca filtrando dinamicamente pelo ID do usuário que está logado no navegador
+            const doacoes = await doacaoAPI.porDoador(auth.getUser().id) || [];
+
+            if (doacoes.length === 0) {
+                tabela.innerHTML = `<tr><td colspan="4" style="text-align: center; padding: 20px; color: #666;">Você ainda não realizou nenhuma doação.</td></tr>`;
+                return;
+            }
+
+            tabela.innerHTML = doacoes.map(d => {
+                const isFin = d.valor != null;
+                return `
+                    <tr style="border-bottom: 1px solid #ddd;">
+                        <td style="padding: 12px;">${d.data || '—'}</td>
+                        <td style="padding: 12px;"><strong>${isFin ? '💵 Financeira' : '📦 Item'}</strong></td>
+                        <td style="padding: 12px; color: #555;">${isFin ? `Pagamento via ${d.metodoPagamento}` : d.descricao}</td>
+                        <td style="padding: 12px; text-align: right; font-weight: bold; color: #1A2A40;">
+                            ${isFin ? `R$ ${parseFloat(d.valor).toFixed(2)}` : `Est. R$ ${parseFloat(d.valorEstimado || 0).toFixed(2)}`}
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        } catch (e) {
+            tabela.innerHTML = `<tr><td colspan="4" style="color:red; text-align:center;">Erro ao carregar histórico: ${e.message}</td></tr>`;
+        }
+    }
+
+    carregarHistorico();
+</script>
+</body>
+</html>

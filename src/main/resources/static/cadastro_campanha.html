@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Gerenciar Campanha | Mais Amor Por Favor</title>
+    <link rel="stylesheet" type="text/css" href="css/estilos.css">
+</head>
+<body>
+
+<header>
+    <h1>Mais Amor Por Favor</h1>
+    <p id="subtitulo-tela">Nova Campanha</p>
+</header>
+
+<div class="container">
+    <div class="card">
+        <form id="form-campanha" onsubmit="salvarCampanha(event)">
+            <div class="form-grid">
+                <div class="full-width">
+                    <label>Nome da Campanha</label>
+                    <input type="text" id="c-nome" required>
+                </div>
+
+                <div class="full-width">
+                    <label>Descrição Detalhada</label>
+                    <textarea id="c-desc" rows="4" required></textarea>
+                </div>
+
+                <div>
+                    <label>Data de Início</label>
+                    <input type="date" id="c-dataini" required>
+                </div>
+
+                <div>
+                    <label>Data de Término</label>
+                    <input type="date" id="c-datafim" required>
+                </div>
+
+                <div>
+                    <label>Capacidade (Pessoas)</label>
+                    <input type="number" id="c-cap" required>
+                </div>
+
+                <div>
+                    <label>Status</label>
+                    <select id="c-status">
+                        <option value="Ativa">Ativa</option>
+                        <option value="Pausada">Pausada</option>
+                        <option value="Encerrada">Encerrada</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label>Contato Responsável</label>
+                    <input type="text" id="c-contres" required>
+                </div>
+
+                <div class="full-width" style="margin-top:15px; border-top:1px solid #ddd; padding-top:15px;">
+                    <label><strong>Endereço da Campanha</strong></label>
+                </div>
+
+                <div class="full-width">
+                    <label>Logradouro</label>
+                    <input type="text" id="c-logradouro" required placeholder="Rua, número, bairro">
+                </div>
+
+                <div>
+                    <label>Cidade</label>
+                    <input type="text" id="c-cidade" required placeholder="Cidade">
+                </div>
+
+                <div>
+                    <label>Estado</label>
+                    <input type="text" id="c-estado" required placeholder="SP" maxlength="2">
+                </div>
+
+                <div>
+                    <label>CEP</label>
+                    <input type="text" id="c-cep" required placeholder="00000-000">
+                </div>
+            </div>
+
+            <button type="submit" class="btn-submit" id="btn-salvar">Criar Campanha</button>
+
+            <a href="home_organizador.html" style="display:block; text-align:center; margin-top:15px; color:#1A2A40; text-decoration:none;">
+                Cancelar e Voltar
+            </a>
+        </form>
+    </div>
+</div>
+
+<script type="module">
+    import { auth, campanhaAPI } from './js/api.js';
+    if (!auth.isLogged()) window.location.href = 'index.html';
+
+    const params = new URLSearchParams(window.location.search);
+    const idCampanha = params.get('id');
+
+    if (idCampanha) {
+        document.getElementById('subtitulo-tela').textContent = "Editar Campanha";
+        document.getElementById('btn-salvar').textContent = "Salvar Alterações";
+        carregarDados(idCampanha);
+    }
+
+    async function carregarDados(id) {
+        try {
+            const c = await campanhaAPI.buscarId(id);
+            document.getElementById('c-nome').value = c.nome || '';
+            document.getElementById('c-desc').value = c.descricao || '';
+            document.getElementById('c-dataini').value = c.dataInicio || '';
+            document.getElementById('c-datafim').value = c.dataFim || '';
+            document.getElementById('c-cap').value = c.capacidadePessoas || '';
+            document.getElementById('c-status').value = c.status || 'Ativa';
+            document.getElementById('c-contres').value = c.contatoResponsavel || '';
+            if (c.endereco) {
+                document.getElementById('c-logradouro').value = c.endereco.logradouro || '';
+                document.getElementById('c-cidade').value = c.endereco.cidade || '';
+                document.getElementById('c-estado').value = c.endereco.estado || '';
+                document.getElementById('c-cep').value = c.endereco.cep || '';
+            }
+        } catch (e) { alert('Erro ao carregar dados: ' + e.message); }
+    }
+
+    window.salvarCampanha = async function(event) {
+        event.preventDefault();
+
+        const payload = {
+            nome: document.getElementById('c-nome').value,
+            descricao: document.getElementById('c-desc').value,
+            dataInicio: document.getElementById('c-dataini').value,
+            dataFim: document.getElementById('c-datafim').value,
+            capacidadePessoas: parseInt(document.getElementById('c-cap').value),
+            status: document.getElementById('c-status').value,
+            contatoResponsavel: document.getElementById('c-contres').value,
+            endereco: {
+                logradouro: document.getElementById('c-logradouro').value,
+                cidade: document.getElementById('c-cidade').value,
+                estado: document.getElementById('c-estado').value,
+                cep: document.getElementById('c-cep').value
+            },
+            // Captura automática do ID do organizador logado!
+            organizador: { id: auth.getUser().id }
+        };
+
+        try {
+            if (idCampanha) {
+                await campanhaAPI.atualizar(idCampanha, payload);
+            } else {
+                await campanhaAPI.criar(payload);
+            }
+            alert('Campanha salva com sucesso!');
+            window.location.href = 'home_organizador.html';
+        } catch (e) { alert('Erro ao salvar: ' + e.message); }
+    }
+</script>
+</body>
+</html>

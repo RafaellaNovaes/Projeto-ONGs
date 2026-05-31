@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Fazer Doação | Mais Amor Por Favor</title>
+    <link rel="stylesheet" type="text/css" href="css/estilos.css">
+</head>
+<body>
+
+<header>
+    <h1>Mais Amor Por Favor</h1>
+    <p>Sua contribuição transforma vidas</p>
+</header>
+
+<div class="container">
+    <div class="card">
+        <h2>Registrar Doação</h2>
+        <div id="alert-msg" style="margin-bottom: 15px; font-weight: bold; text-align: center; display: none;"></div>
+
+        <form id="form-doacao" onsubmit="enviarDoacao(event)">
+            <div class="form-grid">
+
+                <div class="full-width">
+                    <label>Tipo de Doação</label>
+                    <select id="d-tipo" onchange="alternarCamposDoacao()">
+                        <option value="financeira">💵 Financeira</option>
+                        <option value="item">📦 Item / Mantimento</option>
+                    </select>
+                </div>
+
+                <div id="grupo-financeiro" class="full-width form-grid" style="display: contents;">
+                    <div>
+                        <label>Valor da Doação (R$)</label>
+                        <input type="number" id="d-valor" step="0.01" placeholder="0,00">
+                    </div>
+                    <div>
+                        <label>Método de Pagamento</label>
+                        <select id="d-metodo">
+                            <option value="PIX">PIX</option>
+                            <option value="CARTAO_CREDITO">Cartão de Crédito</option>
+                            <option value="TRANSFERENCIA">Transferência</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div id="grupo-item" class="full-width form-grid" style="display: none;">
+                    <div class="full-width">
+                        <label>Descrição do Item</label>
+                        <input type="text" id="d-desc" placeholder="Ex: 5 caixas de leite, Cobertores tam G">
+                    </div>
+                    <div>
+                        <label>Categoria</label>
+                        <select id="d-categoria">
+                            <option value="ALIMENTO">Alimento</option>
+                            <option value="ROUPA">Roupa / Agasalho</option>
+                            <option value="HIGIENE">Higiene Pessoal</option>
+                            <option value="OUTRO">Outros</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label>Valor Estimado (Opcional R$)</label>
+                        <input type="number" id="d-val-estimado" step="0.01" placeholder="0,00">
+                    </div>
+                </div>
+
+            </div>
+
+            <div style="margin-top: 20px; padding: 12px; background-color: #f9f9f9; border-left: 4px solid #E1AD01; font-size: 0.85rem; color: #555;">
+                ℹ️ Esta doação gerará automaticamente um <strong>Recibo Digital</strong> e uma <strong>Notificação Administrativa</strong> (Processamento via Padrão Decorator).
+            </div>
+
+            <button type="submit" class="btn-submit" style="background-color: #E1AD01; margin-top: 20px;">Confirmar e Enviar Doação 💛</button>
+            <a href="home_doador.html" style="display:block; text-align:center; margin-top:15px; color:#1A2A40; text-decoration:none;">Cancelar</a>
+        </form>
+    </div>
+</div>
+
+<script type="module">
+    import { auth, doacaoAPI } from './js/api.js';
+    if (!auth.isLogged()) window.location.href = 'index.html';
+
+    const params = new URLSearchParams(window.location.search);
+    const campanhaId = params.get('campanhaId');
+
+    window.alternarCamposDoacao = function() {
+        const tipo = document.getElementById('d-tipo').value;
+        if (tipo === 'financeira') {
+            document.getElementById('grupo-financeiro').style.display = 'contents';
+            document.getElementById('grupo-item').style.display = 'none';
+        } else {
+            document.getElementById('grupo-financeiro').style.display = 'none';
+            document.getElementById('grupo-item').style.display = 'contents';
+        }
+    };
+
+    window.enviarDoacao = async function(event) {
+        event.preventDefault();
+        const alertEl = document.getElementById('alert-msg');
+        alertEl.style.display = 'none';
+
+        const tipo = document.getElementById('d-tipo').value;
+        const payload = {
+            campanhaId: campanhaId,
+            doadorId: auth.getUser().id, // Pega o ID automático do doador autenticado!
+            data: new Date().toISOString().split('T')[0]
+        };
+
+        if (tipo === 'financeira') {
+            const val = parseFloat(document.getElementById('d-valor').value);
+            if (!val || val <= 0) { alert('Informe um valor válido.'); return; }
+            payload.valor = val;
+            payload.metodoPagamento = document.getElementById('d-metodo').value;
+        } else {
+            const desc = document.getElementById('d-desc').value.trim();
+            if (!desc) { alert('Descreva o item.'); return; }
+            payload.descricao = desc;
+            payload.categoria = document.getElementById('d-categoria').value;
+            payload.valorEstimado = parseFloat(document.getElementById('d-val-estimado').value) || 0;
+        }
+
+        try {
+            await doacaoAPI.realizar(payload);
+            alertEl.style.color = 'green';
+            alertEl.textContent = '✅ Doação enviada com sucesso!';
+            alertEl.style.display = 'block';
+            setTimeout(() => window.location.href = 'home_doador.html', 1500);
+        } catch (e) {
+            alertEl.style.color = '#d9534f';
+            alertEl.textContent = e.message || 'Erro ao registrar doação.';
+            alertEl.style.display = 'block';
+        }
+    };
+</script>
+</body>
+</html>
