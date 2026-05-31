@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Detalhes da Campanha | Mais Amor Por Favor</title>
+    <link rel="stylesheet" type="text/css" href="css/estilos.css">
+</head>
+<body>
+
+<header>
+    <h1>Mais Amor Por Favor</h1>
+    <p>Detalhes da Campanha</p>
+</header>
+
+<div class="container">
+    <div class="card" id="conteudo-campanha">
+        <p>Buscando detalhes da causa...</p>
+    </div>
+</div>
+
+<script type="module">
+    import { auth, campanhaAPI } from './js/api.js';
+    if (!auth.isLogged()) window.location.href = 'index.html';
+
+    const params = new URLSearchParams(window.location.search);
+    const id = params.get('id');
+
+    async function buscarDetalhes() {
+        const container = document.getElementById('conteudo-campanha');
+        try {
+            const c = await campanhaAPI.buscarId(id);
+            container.innerHTML = `
+                <h2 style="color: #1A2A40;">${c.nome}</h2>
+                <p>${c.descricao}</p>
+
+                <div class="form-grid" style="margin-top: 20px;">
+                    <div><label>Data de Início</label><p>${c.dataInicio}</p></div>
+                    <div><label>Data de Término</label><p>${c.dataFim}</p></div>
+                    <div><label>Capacidade</label><p>${c.capacidadePessoas} pessoas</p></div>
+                    <div><label>Status</label><p>${c.status}</p></div>
+                    <div><label>Contato Responsável</label><p>${c.contatoResponsavel}</p></div>
+                    <div><label>Local</label><p>${c.endereco.logradouro}, ${c.endereco.cidade} - ${c.endereco.estado}</p></div>
+                </div>
+
+                <button class="btn-submit" onclick="irParaDoar('${c.id}')" style="background-color: #E1AD01; margin-top: 30px;">
+                    Quero Doar Agora 💛
+                </button>
+
+                <a href="home_doador.html" style="display:block; text-align:center; margin-top:15px; color:#1A2A40; text-decoration:none;">
+                    ← Voltar para Campanhas
+                </a>
+            `;
+        } catch (e) {
+            container.innerHTML = `<p style="color:red">Erro: ${e.message}</p>`;
+        }
+    }
+
+    window.irParaDoar = (campanhaId) => {
+        window.location.href = `cadastro_doacao.html?campanhaId=${campanhaId}`;
+    };
+
+    buscarDetalhes();
+</script>
+</body>
+</html>

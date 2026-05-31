@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Explorar Campanhas | Mais Amor Por Favor</title>
+    <link rel="stylesheet" type="text/css" href="css/estilos.css">
+</head>
+<body>
+
+<header style="position: relative;">
+    <h1>Mais Amor Por Favor</h1>
+    <p>Escolha uma causa e faça a diferença</p>
+    <button onclick="logout()" style="position: absolute; right: 20px; top: 20px; background: transparent; border: 1px solid white; color: white; padding: 5px 10px; border-radius: 4px; cursor: pointer;">Sair</button>
+</header>
+
+<div class="container">
+    <div style="margin-bottom: 20px; text-align: right;">
+        <a href="historico_doacoes.html" class="btn-submit" style="background-color: #E1AD01; text-decoration: none; display: inline-block; width: auto; padding: 10px 20px;">📋 Minhas Doações</a>
+    </div>
+
+    <div class="card-grid" id="lista-campanhas" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px;">
+        <p>Carregando causas sociais...</p>
+    </div>
+</div>
+
+<script type="module">
+    import { auth, campanhaAPI } from './js/api.js';
+    if (!auth.isLogged()) window.location.href = 'index.html';
+
+    window.logout = () => { auth.logout(); window.location.href = 'index.html'; };
+
+    async function carregarCampanhas() {
+        const grid = document.getElementById('lista-campanhas');
+        try {
+            const lista = await campanhaAPI.listar() || [];
+            if (lista.length === 0) {
+                grid.innerHTML = '<p>Nenhuma campanha disponível no momento.</p>';
+                return;
+            }
+
+            grid.innerHTML = lista.map(c => {
+                const desc = c.descricao || 'Sem descrição.';
+                const descResumida = desc.length > 100 ? desc.substring(0, 100) + "..." : desc;
+                return `
+                    <div class="card" style="display: flex; flex-direction: column; justify-content: space-between;">
+                        <div>
+                            <h3 style="color: #1A2A40; margin-top: 0;">${c.nome}</h3>
+                            <p style="font-size: 0.9rem; color: #666;">${descResumida}</p>
+                            <p><strong>Status:</strong> ${c.status || 'Ativa'}</p>
+                        </div>
+                        <a href="detalhe_campanha.html?id=${c.id}" class="btn-submit" style="text-decoration: none; text-align: center; background-color: #1A2A40; color: white;">
+                           Ver Detalhes
+                        </a>
+                    </div>
+                `;
+            }).join('');
+        } catch (e) {
+            grid.innerHTML = `<p style="color: red;">Erro ao carregar campanhas: ${e.message}</p>`;
+        }
+    }
+
+    carregarCampanhas();
+</script>
+</body>
+</html>

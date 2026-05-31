@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Mais Amor Por Favor | Cadastro</title>
+    <link rel="stylesheet" type="text/css" href="css/estilos.css">
+</head>
+<body>
+
+<header>
+    <h1>Mais Amor Por Favor</h1>
+    <p>Crie sua conta para começar a ajudar</p>
+</header>
+
+<div class="container">
+    <div class="card">
+        <h2 id="titulo-cadastro">Cadastro</h2>
+        <div id="alert-msg" style="color: #d9534f; margin-bottom: 15px; font-weight: bold; text-align: center; display: none;"></div>
+
+        <form id="form-cadastro" onsubmit="fazerCadastro(event)">
+            <div class="form-grid">
+                <div class="full-width">
+                    <label>Nome Completo</label>
+                    <input type="text" id="cad-nome" required placeholder="Digite seu nome">
+                </div>
+
+                <div>
+                    <label>E-mail</label>
+                    <input type="email" id="cad-email" required placeholder="email@exemplo.com">
+                </div>
+
+                <div>
+                    <label>Documento (CPF/CNPJ)</label>
+                    <input type="text" id="cad-documento" required placeholder="000.000.000-00">
+                </div>
+
+                <div>
+                    <label>Data de Nascimento</label>
+                    <input type="date" id="cad-nasc" required>
+                </div>
+
+                <div>
+                    <label>Senha</label>
+                    <input type="password" id="cad-senha" required placeholder="******">
+                </div>
+
+                <div class="full-width" id="campo-ong" style="display: none;">
+                    <label>Registro da ONG</label>
+                    <input type="text" id="cad-registro" placeholder="Número do registro oficial">
+                </div>
+            </div>
+
+            <button type="submit" class="btn-submit">Finalizar Cadastro</button>
+            <a href="index.html" style="display:block; text-align:center; margin-top:15px; color:#1A2A40; text-decoration:none; font-size:0.9rem;">Voltar ao Login</a>
+        </form>
+    </div>
+</div>
+
+<script type="module">
+    import { pessoaAPI } from './js/api.js';
+
+    const params = new URLSearchParams(window.location.search);
+    const perfil = (params.get('perfil') || 'doador').toUpperCase();
+
+    document.getElementById('titulo-cadastro').textContent = `Cadastro de ${perfil === 'ORGANIZADOR' ? 'Organizador' : 'Doador'}`;
+    if (perfil === 'ORGANIZADOR') {
+        document.getElementById('campo-ong').style.display = 'block';
+    }
+
+    window.fazerCadastro = async function(event) {
+        event.preventDefault();
+        const alertEl = document.getElementById('alert-msg');
+        alertEl.style.display = 'none';
+
+        const payload = {
+            nome: document.getElementById('cad-nome').value.trim(),
+            email: document.getElementById('cad-email').value.trim(),
+            senha: document.getElementById('cad-senha').value,
+            documento: document.getElementById('cad-documento').value.trim(),
+            dataNascimento: document.getElementById('cad-nasc').value,
+            perfil: perfil
+        };
+
+        if (perfil === 'ORGANIZADOR') {
+            payload.registroOng = document.getElementById('cad-registro').value.trim();
+        }
+
+        try {
+            await pessoaAPI.cadastrar(payload);
+            alert('Cadastro realizado com sucesso! Faça o login.');
+            window.location.href = 'index.html';
+        } catch (e) {
+            alertEl.textContent = e.message || 'Erro ao realizar cadastro.';
+            alertEl.style.display = 'block';
+        }
+    }
+</script>
+</body>
+</html>
