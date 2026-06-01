@@ -1,5 +1,8 @@
+<%@page import="java.util.List"%>
+<%@page import="model.Campanha"%>
+<%@page contentType="text/html" pageEncoding="UTF-8"%>
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html>
 <head>
     <meta charset="UTF-8">
     <title>Painel do Organizador | Mais Amor Por Favor</title>
@@ -16,73 +19,60 @@
     <div class="card">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
             <h2>Minhas Campanhas</h2>
-            <a href="cadastro_campanha.html" class="btn-submit" style="width: auto; padding: 10px 20px; text-decoration: none;">+ Nova Campanha</a>
+            <a href="ManterCampanha?btnop=NovaCampanha" class="btn-submit" style="width: auto; padding: 10px 20px; text-decoration: none;">+ Nova Campanha</a>
         </div>
 
         <table style="width: 100%; border-collapse: collapse;">
             <thead>
-            <tr style="background-color: #1A2A40; color: #F5F5DC;">
-                <th style="padding: 12px; text-align: left;">Nome da Campanha</th>
-                <th style="padding: 12px; text-align: left;">Status</th>
-                <th style="padding: 12px; text-align: center;">Ações</th>
-            </tr>
+                <tr style="background-color: #1A2A40; color: #F5F5DC;">
+                    <th style="padding: 12px; text-align: left;">ID</th>
+                    <th style="padding: 12px; text-align: left;">Nome da Campanha</th>
+                    <th style="padding: 12px; text-align: left;">Status</th>
+                    <th style="padding: 12px; text-align: center;">Ações</th>
+                </tr>
             </thead>
-            <tbody id="tabela-corpo">
-            <tr>
-                <td colspan="3" style="text-align: center; padding: 20px;">Buscando suas campanhas...</td>
-            </tr>
+            <tbody>
+                <%         
+                    List<Campanha> lista = (List<Campanha>) request.getAttribute("lista");
+                    if (lista != null && !lista.isEmpty()) {
+                        for (Campanha campanha : lista) {
+                %>
+                    <tr style="border-bottom: 1px solid #ddd;">
+                        <td style="padding: 12px;"><%= campanha.getId() %></td>
+                        <td style="padding: 12px;"><%= campanha.getNome() %></td>
+                        <td style="padding: 12px;">
+                            <span style="padding: 4px 8px; border-radius: 4px; background: #e0e0e0; font-size: 0.8rem;">
+                                <%= campanha.getStatus() %>
+                            </span>
+                        </td>
+                        <td style="padding: 12px; text-align: center;">
+                            <a href="ManterCampanha?btnop=EditaCampanha&txtid=<%= campanha.getId() %>" 
+                               style="color: #1A2A40; margin-right: 15px; font-weight: bold; text-decoration: none;">✏️ Editar</a>
+                            
+                            <a href="ManterCampanha?btnop=DeletaCampanha&txtid=<%= campanha.getId() %>" 
+                               onclick="return confirm('Tem certeza que deseja excluir esta campanha?')"
+                               style="color: #d9534f; font-weight: bold; text-decoration: none;">🗑️ Excluir</a>
+                        </td>
+                    </tr>
+                <% 
+                        }
+                    } else { 
+                %>
+                    <tr>
+                        <td colspan="4" style="text-align: center; padding: 20px; color: #666;">
+                            Você ainda não possui campanhas cadastradas.
+                        </td>
+                    </tr>
+                <% } %>
             </tbody>
         </table>
 
         <div style="margin-top: 30px; text-align: right;">
-            <button onclick="logout()" style="background: none; border: none; color: #1A2A40; cursor: pointer; font-size: 0.9rem; font-weight: bold;">⇠ Sair do Sistema</button>
+            <a href="index.jsp" style="color: #1A2A40; text-decoration: none; font-size: 0.9rem;">⇠ Sair do Sistema</a>
         </div>
     </div>
 </div>
 
-<script type="module">
-    import { auth, campanhaAPI } from './js/api.js';
-    if (!auth.isLogged()) window.location.href = 'index.html';
-
-    window.logout = () => { auth.logout(); window.location.href = 'index.html'; };
-
-    async function carregarTabela() {
-        const corpo = document.getElementById('tabela-corpo');
-        try {
-            const lista = await campanhaAPI.listar() || [];
-            if (lista.length === 0) {
-                corpo.innerHTML = `<tr><td colspan="3" style="text-align: center; padding:20px; color:#666;">Você ainda não possui campanhas cadastradas.</td></tr>`;
-                return;
-            }
-
-            corpo.innerHTML = lista.map(c => `
-                <tr style="border-bottom: 1px solid #ddd;">
-                    <td style="padding: 12px;">${c.nome}</td>
-                    <td style="padding: 12px;">
-                        <span style="padding: 4px 8px; border-radius: 4px; background: #e0e0e0; font-size: 0.8rem;">${c.status}</span>
-                    </td>
-                    <td style="padding: 12px; text-align: center;">
-                        <a href="cadastro_campanha.html?id=${c.id}" style="color: #1A2A40; margin-right: 15px; font-weight: bold; text-decoration: none;">✏️ Editar</a>
-                        <button onclick="deletar('${c.id}')" style="background:none; border:none; color: #d9534f; font-weight: bold; cursor:pointer;">🗑️ Excluir</button>
-                    </td>
-                </tr>
-            `).join('');
-        } catch (e) {
-            corpo.innerHTML = `<tr><td colspan="3" style="color:red; text-align:center;">Erro: ${e.message}</td></tr>`;
-        }
-    }
-
-    window.deletar = async function(id) {
-        if (!confirm('Tem certeza que deseja excluir esta campanha?')) return;
-        try {
-            await campanhaAPI.deletar(id);
-            carregarTabela();
-        } catch (e) {
-            alert('Erro ao deletar: ' + e.message);
-        }
-    };
-
-    carregarTabela();
-</script>
+<script src="js/funcoes.js"></script>
 </body>
 </html>
