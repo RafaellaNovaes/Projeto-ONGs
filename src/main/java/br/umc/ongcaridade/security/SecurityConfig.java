@@ -29,16 +29,20 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/",
                                 "/index.html",
+                                "/home_pessoa.html",
+                                "/home_doador.html",
+                                "/cadastro_pessoa.html",
+                                "/historico_doacoes.html",
                                 "/*.html",
+
                                 "/css/**",
                                 "/js/**",
                                 "/img/**",
                                 "/images/**",
                                 "/favicon.ico",
+
                                 "/pessoas/cadastro",
-                                "/pessoas/login",
-                                "/swagger-ui/**",
-                                "/v3/api-docs/**"
+                                "/pessoas/login"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )
