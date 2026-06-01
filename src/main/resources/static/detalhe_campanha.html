@@ -1,65 +1,102 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <title>Detalhes da Campanha | Mais Amor Por Favor</title>
-    <link rel="stylesheet" type="text/css" href="css/estilos.css">
+  <meta charset="UTF-8">
+  <title>Detalhes da Campanha | Mais Amor Por Favor</title>
+  <link rel="stylesheet" href="css/estilos.css">
 </head>
 <body>
 
 <header>
-    <h1>Mais Amor Por Favor</h1>
-    <p>Detalhes da Campanha</p>
+  <h1>Mais Amor Por Favor</h1>
+  <p>Detalhes da Campanha</p>
 </header>
 
 <div class="container">
-    <div class="card" id="conteudo-campanha">
-        <p>Buscando detalhes da causa...</p>
-    </div>
+  <div class="card" id="conteudo-campanha">
+    <p style="color:#888; text-align:center; padding:30px;">Buscando detalhes da causa...</p>
+  </div>
 </div>
 
 <script type="module">
-    import { auth, campanhaAPI } from './js/api.js';
-    if (!auth.isLogged()) window.location.href = 'index.html';
+  import { auth, campanhaAPI } from './js/api.js';
+  if (!auth.isLogged()) window.location.href = 'index.html';
 
-    const params = new URLSearchParams(window.location.search);
-    const id = params.get('id');
+  const params = new URLSearchParams(window.location.search);
+  const id = params.get('id');
 
-    async function buscarDetalhes() {
-        const container = document.getElementById('conteudo-campanha');
-        try {
-            const c = await campanhaAPI.buscarId(id);
-            container.innerHTML = `
-                <h2 style="color: #1A2A40;">${c.nome}</h2>
-                <p>${c.descricao}</p>
+  if (!id) window.location.href = 'home_doador.html';
 
-                <div class="form-grid" style="margin-top: 20px;">
-                    <div><label>Data de Início</label><p>${c.dataInicio}</p></div>
-                    <div><label>Data de Término</label><p>${c.dataFim}</p></div>
-                    <div><label>Capacidade</label><p>${c.capacidadePessoas} pessoas</p></div>
-                    <div><label>Status</label><p>${c.status}</p></div>
-                    <div><label>Contato Responsável</label><p>${c.contatoResponsavel}</p></div>
-                    <div><label>Local</label><p>${c.endereco.logradouro}, ${c.endereco.cidade} - ${c.endereco.estado}</p></div>
-                </div>
+  async function buscarDetalhes() {
+    const container = document.getElementById('conteudo-campanha');
+    try {
+      const c = await campanhaAPI.buscarId(id);
+      const statusClass = {
+        'Ativa': 'badge-ativa',
+        'Pausada': 'badge-pausada',
+        'Encerrada': 'badge-encerrada'
+      }[c.status] || 'badge-ativa';
 
-                <button class="btn-submit" onclick="irParaDoar('${c.id}')" style="background-color: #E1AD01; margin-top: 30px;">
-                    Quero Doar Agora 💛
-                </button>
+      const podeDoar = c.status === 'Ativa';
 
-                <a href="home_doador.html" style="display:block; text-align:center; margin-top:15px; color:#1A2A40; text-decoration:none;">
-                    ← Voltar para Campanhas
-                </a>
-            `;
-        } catch (e) {
-            container.innerHTML = `<p style="color:red">Erro: ${e.message}</p>`;
-        }
+      container.innerHTML = `
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:12px; margin-bottom:16px;">
+          <h2 style="margin:0; border:none; padding:0;">${c.nome || 'Campanha'}</h2>
+          <span class="badge ${statusClass}" style="font-size:0.9rem;">${c.status || 'Ativa'}</span>
+        </div>
+
+        <p style="color:#555; line-height:1.7; margin-bottom:24px;">${c.descricao || ''}</p>
+
+        <div class="form-grid" style="margin-bottom:24px;">
+          <div>
+            <label>📅 Data de Início</label>
+            <p style="margin:4px 0; font-size:0.95rem;">${c.dataInicio || '—'}</p>
+          </div>
+          <div>
+            <label>📅 Data de Término</label>
+            <p style="margin:4px 0; font-size:0.95rem;">${c.dataFim || '—'}</p>
+          </div>
+          <div>
+            <label>👥 Capacidade</label>
+            <p style="margin:4px 0; font-size:0.95rem;">${c.capacidadePessoas || '—'} pessoas</p>
+          </div>
+          <div>
+            <label>📞 Contato Responsável</label>
+            <p style="margin:4px 0; font-size:0.95rem;">${c.contatoResponsavel || '—'}</p>
+          </div>
+          ${c.endereco ? `
+          <div class="full-width">
+            <label>📍 Local</label>
+            <p style="margin:4px 0; font-size:0.95rem;">
+              ${c.endereco.logradouro || ''}, ${c.endereco.cidade || ''} - ${c.endereco.estado || ''}
+              ${c.endereco.cep ? `(CEP: ${c.endereco.cep})` : ''}
+            </p>
+          </div>` : ''}
+        </div>
+
+        ${podeDoar ? `
+          <button class="btn-submit" onclick="irParaDoar('${c.id}')"
+                  style="background:#E1AD01; font-size:1.05rem;">
+            💛 Quero Doar para Esta Campanha
+          </button>` : `
+          <div class="info-box">
+            ℹ️ Esta campanha está <strong>${c.status}</strong> e não está aceitando doações no momento.
+          </div>`}
+
+        <a href="home_doador.html" class="link-voltar" style="margin-top:16px;">← Voltar para Campanhas</a>
+      `;
+    } catch (e) {
+      container.innerHTML = `<p style="color:red; text-align:center;">Erro ao carregar campanha: ${e.message}</p>
+        <a href="home_doador.html" class="link-voltar">← Voltar</a>`;
     }
+  }
 
-    window.irParaDoar = (campanhaId) => {
-        window.location.href = `cadastro_doacao.html?campanhaId=${campanhaId}`;
-    };
+  // Nome correto do arquivo de doação
+  window.irParaDoar = (campanhaId) => {
+    window.location.href = `cadastro_doacoes.html?campanhaId=${campanhaId}`;
+  };
 
-    buscarDetalhes();
+  buscarDetalhes();
 </script>
 </body>
 </html>

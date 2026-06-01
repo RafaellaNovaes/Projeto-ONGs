@@ -1,22 +1,22 @@
-
 const BASE_URL = 'https://projeto-ong-production.up.railway.app';
 
 export const auth = {
   getToken: () => localStorage.getItem('jwt_token'),
   setToken: (t) => localStorage.setItem('jwt_token', t),
-  getUser:  () => {
-    try {
-      return JSON.parse(localStorage.getItem('ong_user'));
-    } catch {
-      return null;
-    }
+  getUser: () => {
+    try { return JSON.parse(localStorage.getItem('ong_user')); }
+    catch { return null; }
   },
-  setUser:  (u) => localStorage.setItem('ong_user', JSON.stringify(u)),
-  logout:   () => {
+  setUser: (u) => localStorage.setItem('ong_user', JSON.stringify(u)),
+  logout: () => {
     localStorage.removeItem('jwt_token');
     localStorage.removeItem('ong_user');
   },
   isLogged: () => !!localStorage.getItem('jwt_token'),
+  isPerfil: (p) => {
+    const u = auth.getUser();
+    return u && u.perfil === p;
+  }
 };
 
 async function req(method, path, body = null, requireAuth = true) {
@@ -58,22 +58,30 @@ async function req(method, path, body = null, requireAuth = true) {
   return text ? JSON.parse(text) : null;
 }
 
-
 export const pessoaAPI = {
+  login: (email, senha) => req('POST', '/pessoas/login', { email, senha }, false),
   cadastrar: (dados) => req('POST', '/pessoas/cadastro', dados, false),
-  login:     (email, senha) => req('POST', '/pessoas/login', { email, senha }, false),
 };
 
 export const campanhaAPI = {
-  listar:    ()         => req('GET',    '/campanhas'),
-  buscarId:  (id)       => req('GET',    `/campanhas/${id}`),
-  criar:     (dados)    => req('POST',   '/campanhas', dados),
-  atualizar: (id, dados)=> req('PUT',    `/campanhas/${id}`, dados),
-  deletar:   (id)       => req('DELETE', `/campanhas/${id}`),
+  listar:    ()          => req('GET',    '/campanhas'),
+  buscarId:  (id)        => req('GET',    `/campanhas/${id}`),
+  criar:     (dados)     => req('POST',   '/campanhas', dados),
+  atualizar: (id, dados) => req('PUT',    `/campanhas/${id}`, dados),
+  deletar:   (id)        => req('DELETE', `/campanhas/${id}`),
 };
 
 export const doacaoAPI = {
-  realizar:       (dados)      => req('POST', '/doacoes', dados),
-  porDoador:      (doadorId)   => req('GET',  `/doacoes/doador/${doadorId}`),
-  porCampanha:    (campanhaId) => req('GET',  `/doacoes/campanha/${campanhaId}`),
+  realizar:    (dados)      => req('POST', '/doacoes', dados),
+  porDoador:   (doadorId)   => req('GET',  `/doacoes/doador/${doadorId}`),
+  porCampanha: (campanhaId) => req('GET',  `/doacoes/campanha/${campanhaId}`),
 };
+
+export function decodeJwt(token) {
+  try {
+    const payload = token.split('.')[1];
+    return JSON.parse(atob(payload));
+  } catch {
+    return null;
+  }
+}

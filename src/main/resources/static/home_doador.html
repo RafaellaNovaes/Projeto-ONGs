@@ -1,65 +1,85 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <title>Explorar Campanhas | Mais Amor Por Favor</title>
-    <link rel="stylesheet" type="text/css" href="css/estilos.css">
+  <meta charset="UTF-8">
+  <title>Campanhas | Mais Amor Por Favor</title>
+  <link rel="stylesheet" href="css/estilos.css">
 </head>
 <body>
 
-<header style="position: relative;">
-    <h1>Mais Amor Por Favor</h1>
-    <p>Escolha uma causa e faça a diferença</p>
-    <button onclick="logout()" style="position: absolute; right: 20px; top: 20px; background: transparent; border: 1px solid white; color: white; padding: 5px 10px; border-radius: 4px; cursor: pointer;">Sair</button>
+<header>
+  <h1>Mais Amor Por Favor</h1>
+  <p>Escolha uma causa e faça a diferença</p>
+  <button class="btn-sair" onclick="logout()">Sair</button>
 </header>
 
 <div class="container">
-    <div style="margin-bottom: 20px; text-align: right;">
-        <a href="historico_doacoes.html" class="btn-submit" style="background-color: #E1AD01; text-decoration: none; display: inline-block; width: auto; padding: 10px 20px;">📋 Minhas Doações</a>
-    </div>
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px;">
+    <h2 style="margin:0; border:none; padding:0;">Campanhas Disponíveis</h2>
+    <a href="historico_doacao.html" class="btn-submit"
+       style="width:auto; padding:10px 20px; margin:0; background:#1A2A40; color:white;">
+      📋 Minhas Doações
+    </a>
+  </div>
 
-    <div class="card-grid" id="lista-campanhas" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px;">
-        <p>Carregando causas sociais...</p>
-    </div>
+  <div id="alert-msg" class="alert erro"></div>
+
+  <div class="card-grid" id="lista-campanhas">
+    <p style="color:#888;">Carregando campanhas...</p>
+  </div>
 </div>
 
 <script type="module">
-    import { auth, campanhaAPI } from './js/api.js';
-    if (!auth.isLogged()) window.location.href = 'index.html';
+  import { auth, campanhaAPI } from './js/api.js';
+  if (!auth.isLogged()) window.location.href = 'index.html';
 
-    window.logout = () => { auth.logout(); window.location.href = 'index.html'; };
+  window.logout = () => { auth.logout(); window.location.href = 'index.html'; };
 
-    async function carregarCampanhas() {
-        const grid = document.getElementById('lista-campanhas');
-        try {
-            const lista = await campanhaAPI.listar() || [];
-            if (lista.length === 0) {
-                grid.innerHTML = '<p>Nenhuma campanha disponível no momento.</p>';
-                return;
-            }
+  async function carregarCampanhas() {
+    const grid = document.getElementById('lista-campanhas');
+    const alertEl = document.getElementById('alert-msg');
 
-            grid.innerHTML = lista.map(c => {
-                const desc = c.descricao || 'Sem descrição.';
-                const descResumida = desc.length > 100 ? desc.substring(0, 100) + "..." : desc;
-                return `
-                    <div class="card" style="display: flex; flex-direction: column; justify-content: space-between;">
-                        <div>
-                            <h3 style="color: #1A2A40; margin-top: 0;">${c.nome}</h3>
-                            <p style="font-size: 0.9rem; color: #666;">${descResumida}</p>
-                            <p><strong>Status:</strong> ${c.status || 'Ativa'}</p>
-                        </div>
-                        <a href="detalhe_campanha.html?id=${c.id}" class="btn-submit" style="text-decoration: none; text-align: center; background-color: #1A2A40; color: white;">
-                           Ver Detalhes
-                        </a>
-                    </div>
-                `;
-            }).join('');
-        } catch (e) {
-            grid.innerHTML = `<p style="color: red;">Erro ao carregar campanhas: ${e.message}</p>`;
-        }
+    try {
+      const lista = await campanhaAPI.listar() || [];
+
+      if (lista.length === 0) {
+        grid.innerHTML = '<p style="color:#888; grid-column:1/-1;">Nenhuma campanha disponível no momento.</p>';
+        return;
+      }
+
+      grid.innerHTML = lista.map(c => {
+        const desc = c.descricao || 'Sem descrição.';
+        const descResumida = desc.length > 100 ? desc.substring(0, 100) + '...' : desc;
+        const statusClass = {
+          'Ativa': 'badge-ativa',
+          'Pausada': 'badge-pausada',
+          'Encerrada': 'badge-encerrada'
+        }[c.status] || 'badge-ativa';
+
+        return `
+          <div class="campanha-card">
+            <div>
+              <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px;">
+                <h3 style="margin:0; font-size:1.1rem;">${c.nome || 'Sem nome'}</h3>
+                <span class="badge ${statusClass}">${c.status || 'Ativa'}</span>
+              </div>
+              <p style="font-size:0.88rem; color:#666; margin:0 0 12px;">${descResumida}</p>
+              ${c.endereco ? `<p style="font-size:0.82rem; color:#999; margin:0 0 4px;">📍 ${c.endereco.cidade || ''} - ${c.endereco.estado || ''}</p>` : ''}
+            </div>
+            <a href="detalhe_campanha.html?id=${c.id}"
+               class="btn-submit" style="margin-top:16px; background:#1A2A40; color:white; text-align:center;">
+              Ver Detalhes →
+            </a>
+          </div>`;
+      }).join('');
+    } catch (e) {
+      alertEl.textContent = 'Erro ao carregar campanhas: ' + e.message;
+      alertEl.classList.add('show');
+      grid.innerHTML = '';
     }
+  }
 
-    carregarCampanhas();
+  carregarCampanhas();
 </script>
 </body>
 </html>

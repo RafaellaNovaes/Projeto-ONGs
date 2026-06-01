@@ -1,61 +1,111 @@
-<%@page contentType="text/html" pageEncoding="UTF-8"%>
 <!DOCTYPE html>
-<html>
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <title>Mais Amor Por Favor | Login</title>
-    <link rel="stylesheet" type="text/css" href="css/estilos.css">
+    <link rel="stylesheet" href="css/estilos.css">
 </head>
-<body class="login-page">
+<body>
 
 <div class="container">
     <div class="card login-card">
         <h1>Mais Amor Por Favor</h1>
-        
+        <p style="text-align:center; color:#666; font-size:0.9rem; margin-top:4px;">Bem-vindo de volta 💛</p>
+
         <div class="toggle-wrapper">
             <span class="label-text">Doador</span>
             <label class="switch">
-                <input type="checkbox" id="profile-toggle" onclick="toggleProfile()">
-                <span class="slider round"></span>
+                <input type="checkbox" id="profile-toggle" onchange="toggleProfile()">
+                <span class="slider"></span>
             </label>
             <span class="label-text">Organizador</span>
         </div>
 
-        <form action="ManterPessoa" method="POST">
-            
-            <input type="hidden" name="btnop" value="Login">
+        <div id="alert-msg" class="alert erro"></div>
 
-            <div class="input-group">
-                <label>E-mail</label>
-                <input type="email" name="txtemail" required placeholder="exemplo@email.com">
-            </div>
-            
-            <div class="input-group">
-                <label>Senha</label>
-                <input type="password" name="txtsenha" required placeholder="******">
-            </div>
+        <div class="input-group">
+            <label for="txtemail">E-mail</label>
+            <input type="email" id="txtemail" required placeholder="exemplo@email.com">
+        </div>
 
-            <button type="submit" id="btn-login" class="btn-submit">Entrar como Doador</button>
-            
-            <p id="registro-texto" style="margin-top: 20px;">
-                Ainda não tem conta? 
-                <a href="cadastro_pessoa.jsp?perfil=doador" id="link-cadastro" style="color: #E1AD01; font-weight: bold; text-decoration: none;">
-                    Cadastre-se como Doador
-                </a>
-            </p>
-            
-            <% 
-                String msg = (String) request.getAttribute("msg");
-                if (msg != null && !msg.isEmpty()) { 
-            %>
-                <p style="color: #d9534f; margin-top: 15px; font-weight: bold; text-align: center;">
-                    <%= msg %>
-                </p>
-            <% } %>
-        </form>
+        <div class="input-group">
+            <label for="txtsenha">Senha</label>
+            <input type="password" id="txtsenha" required placeholder="••••••">
+        </div>
+
+        <button id="btn-login" class="btn-submit" onclick="fazerLogin()">Entrar como Doador</button>
+
+        <p style="text-align:center; margin-top:20px; font-size:0.9rem;">
+            Ainda não tem conta?
+            <a id="link-cadastro" href="cadastro_pessoa.html?perfil=doador"
+               style="color:#E1AD01; font-weight:700; text-decoration:none;">
+                Cadastre-se como Doador
+            </a>
+        </p>
     </div>
 </div>
 
 <script src="js/funcoes.js"></script>
+<script type="module">
+    import { auth, pessoaAPI, decodeJwt } from './js/api.js';
+
+    // Se já está logado, redireciona
+    if (auth.isLogged()) {
+      const u = auth.getUser();
+      window.location.href = u && u.perfil === 'ORGANIZADOR'
+        ? 'home_organizador.html'
+        : 'home_doador.html';
+    }
+
+    window.fazerLogin = async function () {
+      const alertEl = document.getElementById('alert-msg');
+      alertEl.className = 'alert erro';
+      alertEl.classList.remove('show');
+
+      const email = document.getElementById('txtemail').value.trim();
+      const senha = document.getElementById('txtsenha').value;
+
+      if (!email || !senha) {
+        alertEl.textContent = 'Preencha e-mail e senha.';
+        alertEl.classList.add('show');
+        return;
+      }
+
+      const btn = document.getElementById('btn-login');
+      btn.disabled = true;
+      btn.textContent = 'Entrando...';
+
+      try {
+        const data = await pessoaAPI.login(email, senha);
+        const token = data.token;
+        auth.setToken(token);
+
+        // Decodifica o JWT para extrair sub (email) e monta objeto de usuário
+        const payload = decodeJwt(token);
+
+        // O perfil é determinado pelo toggle que o usuário selecionou,
+        // pois o backend não devolve o perfil no token diretamente.
+        const isOrg = document.getElementById('profile-toggle').checked;
+        const perfil = isOrg ? 'ORGANIZADOR' : 'DOADOR';
+
+        // Salva usuário no localStorage (email vem do sub do JWT)
+        auth.setUser({ email: payload ? payload.sub : email, perfil });
+
+        window.location.href = isOrg ? 'home_organizador.html' : 'home_doador.html';
+      } catch (e) {
+        alertEl.textContent = e.message || 'Credenciais inválidas.';
+        alertEl.classList.add('show');
+        btn.disabled = false;
+        btn.textContent = document.getElementById('profile-toggle').checked
+          ? 'Entrar como Organizador'
+          : 'Entrar como Doador';
+      }
+    };
+
+    // Permite login com Enter
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') fazerLogin();
+    });
+</script>
 </body>
 </html>
